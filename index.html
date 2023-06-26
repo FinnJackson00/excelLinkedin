@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>LinkedIn Profile Picture Retrieval</title>
+</head>
+<body>
+  <script>
+    // Paste the JavaScript code here
+
+    // Get the URL of the Excel spreadsheet
+    var spreadsheetUrl = 'path/to/your/spreadsheet.xlsx';
+
+    // Make an AJAX request to fetch the spreadsheet data
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', spreadsheetUrl, true);
+    xhr.responseType = 'arraybuffer';
+
+    xhr.onload = function () {
+      if (xhr.status === 200) {
+        var data = new Uint8Array(xhr.response);
+        var workbook = XLSX.read(data, { type: 'array' });
+        var sheetName = workbook.SheetNames[0];
+        var worksheet = workbook.Sheets[sheetName];
+        var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+        // Extract LinkedIn URLs from the spreadsheet data
+        var urls = jsonData.map(function (row) {
+          return row[0]; // Assuming the LinkedIn URLs are in the first column
+        });
+
+        // Process each LinkedIn URL
+        urls.forEach(function (url) {
+          // Send a GET request to the LinkedIn profile URL
+          fetch(url)
+            .then(function (response) {
+              return response.text();
+            })
+            .then(function (html) {
+              // Parse the HTML response
+              var parser = new DOMParser();
+              var doc = parser.parseFromString(html, 'text/html');
+
+              // Find the profile picture element
+              var pictureElement = doc.querySelector('.pv-top-card__photo');
+
+              // Extract the profile picture URL
+              var pictureUrl = pictureElement ? pictureElement.getAttribute('src') : '';
+
+              // Do something with the profile picture URL
+              console.log('Profile Picture URL:', pictureUrl);
+            })
+            .catch(function (error) {
+              console.error('Error:', error);
+            });
+        });
+      } else {
+        console.error('Error:', xhr.status);
+      }
+    };
+
+    xhr.onerror = function () {
+      console.error('Request failed.');
+    };
+
+    xhr.send();
+  </script>
+</body>
+</html>
